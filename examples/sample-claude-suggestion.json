@@ -1,0 +1,80 @@
+{
+  "url": "https://blogstudio.co.kr/article/e4988095-b91a-4206-8b8a-588f12b3190f",
+  "title": "아기 이유식, 언제부터 시작해야 할까? 초보 부모가 알아야 할 이유식 기본",
+  "scores": {
+    "seo": 100,
+    "aeo": 75,
+    "geo": 79
+  },
+  "issues": [
+    {
+      "id": "answer-first",
+      "category": "AEO",
+      "result": "WARN",
+      "message": "첫 문단 34자 (권장 40~300자)"
+    },
+    {
+      "id": "metadata-in-head",
+      "category": "GEO",
+      "result": "WARN",
+      "message": "head 안에 있는 것 0/3 — 나머지는 body로 스트리밍됨"
+    },
+    {
+      "id": "citations",
+      "category": "GEO",
+      "result": "WARN",
+      "message": "다른 사이트로 가는 링크 없음 — 출처가 약함"
+    }
+  ],
+  "ai": {
+    "summary": "본문은 질병관리청 안내를 바탕으로 이유식 시작 시기와 원칙을 정리한 글입니다. 다만 첫 문단이 질문에 답하지 않고 공감 문장 하나로 끝나며, 출처로 언급한 질병관리청에 대한 링크가 없어 신뢰 근거가 약합니다. 첫 문단에 핵심 답을 먼저 제시하고 출처 링크를 추가하면 개선됩니다.",
+    "aeo_comment": "첫 문단이 34자짜리 공감 문장이라 '언제 시작하나'라는 질문에 바로 답하지 못합니다. 본문 중간에 있는 '생후 6개월 이후' 권장과 발달 신호를 앞으로 가져오면 답변 노출에 유리합니다.",
+    "geo_comment": "질병관리청을 여러 번 언급하지만 외부 링크가 없어 출처 확인이 어렵습니다. 질병관리청 국가건강정보포털의 해당 자료 링크를 넣고, 3~7일 관찰 같은 수치도 출처와 함께 연결하세요. 구체적인 URL은 출처 추가 필요입니다.",
+    "suggested_description": "아기 이유식은 일반적으로 생후 6개월 이후 시작하도록 권장됩니다. 시작 시기와 발달 신호, 첫 음식, 새 음식을 하나씩 먹이는 방법을 정리했습니다.",
+    "suggested_first_paragraph": "아기 이유식은 일반적으로 생후 6개월 이후에 시작하도록 권장됩니다. 다만 개월 수만 보지 말고 아이가 음식에 관심을 보이는지, 목과 상체를 안정적으로 가누는지, 삼키는 능력이 발달했는지도 함께 살펴보세요. 시작한 뒤에는 새로운 음식을 한 번에 한 가지씩 추가하고, 먹는 양보다 맛과 질감에 익숙해지는 과정에 집중하는 것이 좋습니다.",
+    "suggestions": [
+      {
+        "target": "first_paragraph",
+        "related_check": "answer-first",
+        "problem": "첫 문단이 34자의 공감 문장뿐이라 핵심 답이 없습니다.",
+        "suggestion": "첫 문단을 '생후 6개월 이후 시작 권장, 발달 신호 확인, 새 음식은 하나씩'을 담은 2~3문장으로 교체하세요.",
+        "priority": "high"
+      },
+      {
+        "target": "body",
+        "related_check": "citations",
+        "problem": "질병관리청 자료를 인용하지만 외부 링크가 없습니다.",
+        "suggestion": "'질병관리청 국가건강정보포털'이 처음 나오는 문장에 해당 자료 링크를 걸고, 글 끝에 참고 자료 목록을 추가하세요. 정확한 URL은 출처 추가 필요입니다.",
+        "priority": "high"
+      },
+      {
+        "target": "description",
+        "related_check": "answer-first",
+        "problem": "메타 설명이 본문 첫머리를 그대로 가져와 핵심 키워드와 답이 드러나지 않습니다.",
+        "suggestion": "제안한 메타 설명처럼 '아기 이유식 시작 시기'를 앞에 두고 답을 요약하세요.",
+        "priority": "medium"
+      },
+      {
+        "target": "body",
+        "related_check": "citations",
+        "problem": "철분 공급원과 3~7일 관찰 같은 구체적 내용에 근거 표기가 약합니다.",
+        "suggestion": "각 문장 끝에 출처명을 괄호로 표기하고 링크를 연결하세요. 확인되지 않은 수치는 추가하지 마세요.",
+        "priority": "medium"
+      },
+      {
+        "target": "headings",
+        "related_check": "general",
+        "problem": "일부 소제목이 질문형이 아니거나 핵심 키워드가 부족합니다.",
+        "suggestion": "'새로운 음식은 하나씩'을 '이유식 새 음식은 어떻게 추가할까?'처럼 질문형으로 바꾸세요.",
+        "priority": "low"
+      }
+    ]
+  },
+  "needsReview": false,
+  "problems": [],
+  "usage": {
+    "input": 3408,
+    "output": 1402,
+    "costUsd": 0.0208
+  }
+}
