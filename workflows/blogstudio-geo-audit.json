@@ -245,24 +245,11 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1520,
-        0
+        240,
+        288
       ],
       "id": "4b646790-c367-4e63-8483-7c3339e2b934",
       "name": "Check Rules"
-    },
-    {
-      "parameters": {
-        "maxItems": 2
-      },
-      "type": "n8n-nodes-base.limit",
-      "typeVersion": 1,
-      "position": [
-        864,
-        288
-      ],
-      "id": "01aa6ce2-87f9-4cbe-9731-92c133cc8e3a",
-      "name": "Limit"
     },
     {
       "parameters": {
@@ -272,7 +259,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1136,
+        464,
         288
       ],
       "id": "50bb2515-8320-4276-b642-21c32bc4a66f",
@@ -308,7 +295,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
-        1392,
+        688,
         288
       ],
       "id": "a71e5d84-b172-4f6a-9ed5-b3353d0965a8",
@@ -327,16 +314,55 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "// Claude 응답 꺼내기 + 검증 — LLM 출력은 그대로 믿지 않고 코드로 확인한다\nconst res = $json;                                    // Claude 응답 (또는 API 오류)\nconst src = $('Build Claude Request').item.json;      // 같은 글의 점검 결과: url, scores, checks, content\n\nconst problems = [];\nlet ai = null;\n\nif (res.error) {\n  problems.push(`API 오류: ${JSON.stringify(res.error).slice(0, 200)}`);\n} else if (res.stop_reason !== 'end_turn') {\n  problems.push(`정상 종료 아님: ${res.stop_reason}`);   // refusal = 거절, max_tokens = 잘림\n} else {\n  const block = (res.content ?? []).find((b) => b.type === 'text');\n  try {\n    ai = JSON.parse(block?.text ?? '');\n  } catch {\n    problems.push('JSON 파싱 실패');\n  }\n}\n\nif (ai) {\n  // 1) 글자 수 — JSON 스키마로는 길이를 강제할 수 없어서 코드로 확인한다\n  const len = (s) => [...String(s ?? '')].length;\n  const d = len(ai.suggested_description);\n  if (d < 50 || d > 160) problems.push(`메타 설명 제안 ${d}자 (50~160자 벗어남)`);\n  const f = len(ai.suggested_first_paragraph);\n  if (f < 40 || f > 300) problems.push(`첫 문단 제안 ${f}자 (40~300자 벗어남)`);\n\n  // 2) 지어낸 숫자 — 글에 그대로 들어갈 수 있는 두 문장에 Claude가 본 원문에 없는 숫자가 있으면 표시\n  const c = src.content;\n  const nums = (s) => String(s ?? '').replaceAll(',', '').match(/\\d+(?:\\.\\d+)?/g) ?? [];\n  const seen = new Set(nums([c.title, c.description, c.headings.join(' '), c.firstParagraph, c.text].join(' ')));\n  const invented = [...new Set(nums(`${ai.suggested_description} ${ai.suggested_first_paragraph}`))].filter((n) => !seen.has(n));\n  if (invented.length) problems.push(`원문에 없는 숫자: ${invented.join(', ')}`);\n\n  // 3) related_check — 이 글에서 걸린 규칙이 아니면 general로 바꾼다\n  const failed = new Set(src.checks.filter((ch) => ch.result !== 'PASS').map((ch) => ch.id));\n  for (const s of ai.suggestions ?? []) {\n    if (!failed.has(s.related_check)) s.related_check = 'general';\n  }\n}\n\n// 비용 — Sonnet 5.5 기준 100만 토큰당 입력 $2, 출력 $10\nconst u = res.usage ?? {};\nconst costUsd = ((u.input_tokens ?? 0) * 2 + (u.output_tokens ?? 0) * 10) / 1e6;\n\nreturn {\n  json: {\n    url: src.url,\n    title: src.title,\n    scores: src.scores,\n    issues: src.checks\n      .filter((ch) => ch.result !== 'PASS')\n      .map((ch) => ({ id: ch.id, category: ch.category, result: ch.result, message: ch.message })),\n    ai,\n    needsReview: problems.length > 0,\n    problems,\n    usage: { input: u.input_tokens ?? 0, output: u.output_tokens ?? 0, costUsd: Math.round(costUsd * 10000) / 10000 },\n  },\n};\n"
+        "jsCode": "// Claude 응답 꺼내기 + 검증 — LLM 출력은 그대로 믿지 않고 코드로 확인한다\nconst res = $json;                                    // Claude 응답 (또는 API 오류)\nconst src = $('Build Claude Request').all()[$itemIndex].json;   // 같은 글의 점검 결과 — Claude는 요청 하나에 응답 하나를 같은 순서로 낸다\n\nconst problems = [];\nlet ai = null;\n\n// n8n이 넘기는 오류 '401 - \"{...}\"'를 '401 authentication_error: invalid x-api-key'처럼 읽기 쉽게 바꾼다\nconst apiError = (e) => {\n  const msg = String(e?.message ?? e ?? '');\n  const m = msg.match(/^(\\d{3}) - ([\\s\\S]*)$/);\n  if (!m) return msg.slice(0, 200);\n  try {\n    let body = JSON.parse(m[2]);                    // 응답 본문이 문자열로 한 번 더 감싸져 있다\n    if (typeof body === 'string') body = JSON.parse(body);\n    return `${m[1]} ${body.error?.type ?? ''}: ${body.error?.message ?? ''}`;\n  } catch {\n    return msg.slice(0, 200);\n  }\n};\n\nif (res.error) {\n  problems.push(`API 오류: ${apiError(res.error)}`);\n} else if (res.stop_reason !== 'end_turn') {\n  problems.push(`정상 종료 아님: ${res.stop_reason}`);   // refusal = 거절, max_tokens = 잘림\n} else {\n  const block = (res.content ?? []).find((b) => b.type === 'text');\n  try {\n    ai = JSON.parse(block?.text ?? '');\n  } catch {\n    problems.push('JSON 파싱 실패');\n  }\n}\n\nif (ai) {\n  // 1) 글자 수 — JSON 스키마로는 길이를 강제할 수 없어서 코드로 확인한다\n  const len = (s) => [...String(s ?? '')].length;\n  const d = len(ai.suggested_description);\n  if (d < 50 || d > 160) problems.push(`메타 설명 제안 ${d}자 (50~160자 벗어남)`);\n  const f = len(ai.suggested_first_paragraph);\n  if (f < 40 || f > 300) problems.push(`첫 문단 제안 ${f}자 (40~300자 벗어남)`);\n\n  // 2) 지어낸 숫자 — 글에 그대로 들어갈 수 있는 두 문장에 Claude가 본 원문에 없는 숫자가 있으면 표시\n  const c = src.content;\n  const nums = (s) => String(s ?? '').replaceAll(',', '').match(/\\d+(?:\\.\\d+)?/g) ?? [];\n  const seen = new Set(nums([c.title, c.description, c.headings.join(' '), c.firstParagraph, c.text].join(' ')));\n  const invented = [...new Set(nums(`${ai.suggested_description} ${ai.suggested_first_paragraph}`))].filter((n) => !seen.has(n));\n  if (invented.length) problems.push(`원문에 없는 숫자: ${invented.join(', ')}`);\n\n  // 3) related_check — 이 글에서 걸린 규칙이 아니면 general로 바꾼다\n  const failed = new Set(src.checks.filter((ch) => ch.result !== 'PASS').map((ch) => ch.id));\n  for (const s of ai.suggestions ?? []) {\n    if (!failed.has(s.related_check)) s.related_check = 'general';\n  }\n}\n\n// 비용 — Sonnet 5.5 기준 100만 토큰당 입력 $2, 출력 $10\nconst u = res.usage ?? {};\nconst costUsd = ((u.input_tokens ?? 0) * 2 + (u.output_tokens ?? 0) * 10) / 1e6;\n\nreturn {\n  json: {\n    url: src.url,\n    title: src.title,\n    scores: src.scores,\n    issues: src.checks\n      .filter((ch) => ch.result !== 'PASS')\n      .map((ch) => ({ id: ch.id, category: ch.category, result: ch.result, message: ch.message })),\n    ai,\n    needsReview: problems.length > 0,\n    problems,\n    usage: { input: u.input_tokens ?? 0, output: u.output_tokens ?? 0, costUsd: Math.round(costUsd * 10000) / 10000 },\n  },\n};\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1616,
+        912,
         288
       ],
       "id": "29d8e890-39a2-4eed-83d8-04e0ec788e02",
       "name": "Validate"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 메일 보고서 만들기 — 글별 점검 결과와 Claude 개선안을 HTML 메일 한 통으로 묶는다\nconst rows = $input.all().map((i) => i.json);\n\n// Claude가 쓴 글도 HTML에 넣기 전에 반드시 이스케이프한다\nconst esc = (s) => String(s ?? '')\n  .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')\n  .replaceAll('\"', '&quot;').replaceAll(\"'\", '&#39;');\nconst avg = (k) => Math.round(rows.reduce((t, r) => t + r.scores[k], 0) / Math.max(rows.length, 1) * 10) / 10;\nconst overall = (r) => (r.scores.seo + r.scores.aeo + r.scores.geo) / 3;\nconst review = rows.filter((r) => r.needsReview).length;\nconst cost = rows.reduce((t, r) => t + (r.usage?.costUsd ?? 0), 0);\n\n// 자주 걸린 규칙 (걸린 글 수가 많은 순)\nconst counts = {};\nfor (const r of rows) for (const i of r.issues) counts[i.id] = (counts[i.id] ?? 0) + 1;\nconst topRules = Object.entries(counts).sort((a, b) => b[1] - a[1]);\n\n// 검토가 필요한 글을 먼저, 그다음 점수가 낮은 글부터\nrows.sort((a, b) => (b.needsReview - a.needsReview) || (overall(a) - overall(b)));\n\nconst TARGET = { title: '제목', description: '메타 설명', first_paragraph: '첫 문단', headings: '소제목', body: '본문', structured_data: '구조화 데이터' };\nconst PRIORITY = { high: '높음', medium: '보통', low: '낮음' };\nconst td = 'padding:6px 8px;border:1px solid #ddd;vertical-align:top';\n\nconst card = (r) => {\n  const ai = r.ai;\n  let html = `\n    <h3 style=\"margin:24px 0 4px;font-size:16px\"><a href=\"${esc(r.url)}\" style=\"color:#1a56db\">${esc(r.title)}</a></h3>\n    <div style=\"color:#555;font-size:13px\">SEO ${r.scores.seo} · AEO ${r.scores.aeo} · GEO ${r.scores.geo}\n      · 걸린 규칙: ${r.issues.map((i) => `${esc(i.id)}(${esc(i.result)})`).join(', ') || '없음'}</div>`;\n  if (r.needsReview) {\n    html += `<div style=\"margin:8px 0;padding:8px 12px;background:#fdecea;color:#b42318;font-size:13px\">\n      <b>검토 필요</b> — ${r.problems.map(esc).join(' / ')}</div>`;\n  }\n  if (!ai) return html;\n  const items = (ai.suggestions ?? []).map((s) =>\n    `<li style=\"margin:4px 0\">[${PRIORITY[s.priority] ?? esc(s.priority)}] <b>${TARGET[s.target] ?? esc(s.target)}</b> — ${esc(s.suggestion)}</li>`).join('');\n  return html + `\n    <p style=\"margin:8px 0;font-size:14px\">${esc(ai.summary)}</p>\n    <table style=\"border-collapse:collapse;font-size:13px;width:100%\">\n      <tr><td style=\"${td};width:110px;background:#f7f7f7\">메타 설명 제안</td><td style=\"${td}\">${esc(ai.suggested_description)}</td></tr>\n      <tr><td style=\"${td};background:#f7f7f7\">첫 문단 제안</td><td style=\"${td}\">${esc(ai.suggested_first_paragraph)}</td></tr>\n    </table>\n    <ul style=\"font-size:13px;padding-left:20px\">${items}</ul>`;\n};\n\nconst box = (label, value, color = '#111') =>\n  `<td style=\"padding:8px 18px;border:1px solid #ddd;text-align:center;font-size:13px\">${label}<br><b style=\"font-size:20px;color:${color}\">${value}</b></td>`;\n\nconst html = `\n<div style=\"font-family:-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;max-width:760px;color:#111\">\n  <h2 style=\"margin:0 0 6px\">blogstudio SEO·AEO·GEO 점검 보고</h2>\n  <div style=\"color:#555;font-size:13px\">${$now.toFormat('yyyy-MM-dd HH:mm')} · 글 ${rows.length}개 · Claude 비용 $${cost.toFixed(3)}</div>\n  <table style=\"border-collapse:collapse;margin:16px 0\"><tr>\n    ${box('SEO', avg('seo'))}${box('AEO', avg('aeo'))}${box('GEO', avg('geo'))}${box('검토 필요', review, review ? '#b42318' : '#111')}\n  </tr></table>\n  <div style=\"font-size:13px;color:#333\"><b>자주 걸린 규칙</b>: ${topRules.map(([id, n]) => `${esc(id)} ${n}개`).join(' · ') || '없음'}</div>\n  ${rows.map(card).join('<hr style=\"border:none;border-top:1px solid #eee;margin-top:20px\">')}\n  <p style=\"color:#888;font-size:12px;margin-top:28px\">점수는 규칙(코드)이 매기고, 개선안은 Claude가 썼습니다. 개선안은 글에 자동으로 반영되지 않으니 확인한 뒤 적용하세요.</p>\n</div>`;\n\nconst subject = `[blogstudio 점검] ${$now.toFormat('MM/dd')} · 글 ${rows.length}개 · SEO ${avg('seo')} / AEO ${avg('aeo')} / GEO ${avg('geo')}`\n  + (review ? ` · 검토 필요 ${review}개` : '');\n\nreturn [{ json: { subject, html } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1136,
+        288
+      ],
+      "id": "18e56dbb-5e84-44d3-97fe-e4c41477dd03",
+      "name": "Build Report"
+    },
+    {
+      "parameters": {
+        "fromEmail": "blogstudio 점검 <you@example.com>",
+        "toEmail": "you@example.com",
+        "subject": "={{ $json.subject }}",
+        "html": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1328,
+        288
+      ],
+      "id": "10088fa5-3157-4ba2-a948-43f582b2b0ad",
+      "name": "Send Report",
+      "webhookId": "db23133c-db6c-48fb-8208-cd1b77f0b27a",
+      "credentials": {
+        "smtp": {
+          "id": "5rTlHCLQkVnGVJ7k",
+          "name": "SMTP account"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -422,17 +448,6 @@
       "main": [
         [
           {
-            "node": "Limit",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Limit": {
-      "main": [
-        [
-          {
             "node": "Build Claude Request",
             "type": "main",
             "index": 0
@@ -456,6 +471,28 @@
         [
           {
             "node": "Validate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate": {
+      "main": [
+        [
+          {
+            "node": "Build Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Report": {
+      "main": [
+        [
+          {
+            "node": "Send Report",
             "type": "main",
             "index": 0
           }
