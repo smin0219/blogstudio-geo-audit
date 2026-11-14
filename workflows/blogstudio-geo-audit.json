@@ -1,0 +1,340 @@
+{
+  "name": "blogstudio-geo-audit",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "60e5f32c-b523-4f11-9cdc-3270fd8d313f",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "https://blogstudio.co.kr/sitemap.xml",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "8537f875-5571-42b2-aad8-180f8c44c1f3",
+      "name": "Fetch Sitemap"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.xml",
+      "typeVersion": 1,
+      "position": [
+        448,
+        0
+      ],
+      "id": "2b2dfa08-5d30-4453-b482-5c177260c114",
+      "name": "Parse Sitemap"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "urlset.url",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1.1,
+      "position": [
+        672,
+        0
+      ],
+      "id": "5f329167-d246-4f48-a186-880b5241d152",
+      "name": "Split URLs"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "0c2592ff-db0e-4f6e-96c4-18e6d5a1f769",
+              "leftValue": "={{ $json.loc }}",
+              "rightValue": "/article/",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.4,
+      "position": [
+        896,
+        0
+      ],
+      "id": "7f35660b-b06d-4db4-a6c5-80c313e373c8",
+      "name": "Only Articles"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.loc }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "blogstudio-geo-audit-bot/0.1"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "text",
+              "outputPropertyName": "html"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1120,
+        0
+      ],
+      "id": "fa1dbc54-83fa-47ed-a7e8-0dd46d71e263",
+      "name": "Fetch Article"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "dataPropertyName": "html",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "title",
+              "cssSelector": "title"
+            },
+            {
+              "key": "titleInHead",
+              "cssSelector": "head title"
+            },
+            {
+              "key": "description",
+              "cssSelector": "meta[name=\"description\"]",
+              "returnValue": "attribute",
+              "attribute": "content"
+            },
+            {
+              "key": "descriptionInHead",
+              "cssSelector": "head meta[name=\"description\"]",
+              "returnValue": "attribute",
+              "attribute": "content"
+            },
+            {
+              "key": "canonical",
+              "cssSelector": "link[rel=\"canonical\"]",
+              "returnValue": "attribute",
+              "attribute": "href"
+            },
+            {
+              "key": "canonicalInHead",
+              "cssSelector": "head link[rel=\"canonical\"]",
+              "returnValue": "attribute",
+              "attribute": "href"
+            },
+            {
+              "key": "robots",
+              "cssSelector": "meta[name=\"robots\"]",
+              "returnValue": "attribute",
+              "attribute": "content"
+            },
+            {
+              "key": "h1",
+              "cssSelector": "h1",
+              "returnArray": true
+            },
+            {
+              "key": "headings",
+              "cssSelector": "h2, h3",
+              "returnArray": true
+            },
+            {
+              "key": "ogTitle",
+              "cssSelector": "meta[property=\"og:title\"]",
+              "returnValue": "attribute",
+              "attribute": "content"
+            },
+            {
+              "key": "ogDescription",
+              "cssSelector": "meta[property=\"og:description\"]",
+              "returnValue": "attribute",
+              "attribute": "content"
+            },
+            {
+              "key": "ogImage",
+              "cssSelector": "meta[property=\"og:image\"]",
+              "returnValue": "attribute",
+              "attribute": "content"
+            },
+            {
+              "key": "jsonLd",
+              "cssSelector": "script[type=\"application/ld+json\"]",
+              "returnValue": "html",
+              "returnArray": true
+            },
+            {
+              "key": "bodyText",
+              "cssSelector": "article"
+            },
+            {
+              "key": "paragraphs",
+              "cssSelector": "article p",
+              "returnArray": true
+            },
+            {
+              "key": "links",
+              "cssSelector": "article a[href]",
+              "returnValue": "attribute",
+              "attribute": "href",
+              "returnArray": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        1296,
+        0
+      ],
+      "id": "93d487bd-ce50-4e73-8c3a-a08fdb4e03ec",
+      "name": "Extract SEO Fields"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// 규칙 점검 + 점수 (SEO·AEO·GEO) — 판정과 점수는 코드로 한다. LLM은 쓰지 않는다\nconst p = $json;\nconst url = $('Only Articles').item.json.loc;\nconst status = $('Fetch Article').item.json.statusCode;\n\nconst checks = [];\nconst add = (id, category, weight, result, message, value = null) =>\n  checks.push({ id, category, weight, result, message, value });\nconst len = (s) => [...(s ?? '')].length;                 // 한글도 한 글자로 센다\nconst nonEmpty = (arr) => (arr ?? []).filter((v) => v && String(v).trim());\n\n// ---------- SEO ----------\nadd('status', 'SEO', 3, status === 200 ? 'PASS' : 'FAIL', `HTTP ${status}`, status);\n\nconst noindex = /noindex/i.test(p.robots ?? '');\nadd('indexable', 'SEO', 3, noindex ? 'FAIL' : 'PASS', noindex ? 'noindex가 있어 검색에 안 나옴' : '색인 허용', p.robots ?? '');\n\nconst title = (p.title ?? '').replace(/ · 블로그스튜디오$/, '');   // 사이트 이름 꼬리는 빼고 잰다\nconst tl = len(title);\nadd('title', 'SEO', 1, tl === 0 ? 'FAIL' : tl >= 10 && tl <= 60 ? 'PASS' : 'WARN', tl === 0 ? '제목 없음' : `제목 ${tl}자 (권장 10~60자)`, title);\n\nconst dl = len(p.description);\nadd('description', 'SEO', 2, dl === 0 ? 'FAIL' : dl >= 50 && dl <= 160 ? 'PASS' : 'WARN', dl === 0 ? '메타 설명 없음' : `메타 설명 ${dl}자 (권장 50~160자)`);\n\nconst canonicalOk = (p.canonical ?? '').replace(/\\/$/, '') === url.replace(/\\/$/, '');\nadd('canonical', 'SEO', 2, canonicalOk ? 'PASS' : 'FAIL', canonicalOk ? '자기 주소를 가리킴' : p.canonical ? '다른 주소를 가리킴' : 'canonical 없음', p.canonical ?? '');\n\nconst h1s = nonEmpty(p.h1);\nadd('h1', 'SEO', 1, h1s.length === 1 ? 'PASS' : 'WARN', `h1 ${h1s.length}개`, h1s.length);\n\nconst ogMissing = ['ogTitle', 'ogDescription', 'ogImage'].filter((k) => !p[k]);\nadd('open-graph', 'SEO', 1, ogMissing.length ? 'WARN' : 'PASS', ogMissing.length ? `없음: ${ogMissing.join(', ')}` : 'og 태그 모두 있음');\n\nlet posting = null, ldError = false;                      // JSON-LD 여러 개 중 BlogPosting 찾기\nfor (const raw of p.jsonLd ?? []) {\n  try {\n    const obj = JSON.parse(raw);\n    posting = posting ?? (obj['@graph'] ?? [obj]).find((n) => ['BlogPosting', 'Article'].includes(n['@type']));\n  } catch { ldError = true; }\n}\nconst ldMissing = posting ? ['headline', 'datePublished', 'author'].filter((k) => !posting[k]) : [];\nadd('json-ld', 'SEO', 2, ldError || !posting ? 'FAIL' : ldMissing.length ? 'WARN' : 'PASS',\n  ldError ? 'JSON-LD 문법 오류' : !posting ? 'BlogPosting 없음' : ldMissing.length ? `빠진 필드: ${ldMissing.join(', ')}` : '필수 필드 있음');\n\n// ---------- AEO ----------\nconst isQuestion = (s) => /\\?|무엇|어떻게|왜|언제|어디|누가|얼마|(까|나요|가요|는가)\\s*$/.test(s ?? '');\nconst headings = nonEmpty(p.headings);\nconst questions = [title, ...headings].filter(isQuestion);\nadd('question-heading', 'AEO', 1, questions.length ? 'PASS' : 'WARN', questions.length ? `질문형 제목·소제목 ${questions.length}개` : '질문형 제목·소제목 없음', questions[0] ?? '');\n\nconst paras = nonEmpty(p.paragraphs).map((s) => s.trim());\nconst first = paras.find((s) => len(s) >= 20) ?? '';     // 작성자 이름 같은 짧은 줄은 건너뜀\nconst fl = len(first);\nadd('answer-first', 'AEO', 2, fl >= 40 && fl <= 300 ? 'PASS' : 'WARN', fl === 0 ? '첫 문단 없음' : `첫 문단 ${fl}자 (권장 40~300자)`, first.slice(0, 80));\n\nconst longest = Math.max(0, ...paras.map(len));\nadd('paragraph-structure', 'AEO', 1, headings.length >= 2 && longest <= 800 ? 'PASS' : 'WARN', `소제목 ${headings.length}개, 가장 긴 문단 ${longest}자`);\n\n// ---------- GEO ----------\nconst inHead = [p.titleInHead, p.descriptionInHead, p.canonicalInHead].filter(Boolean).length;\nadd('metadata-in-head', 'GEO', 2, inHead === 3 ? 'PASS' : 'WARN', inHead === 3 ? '메타데이터가 head 안에 있음' : `head 안에 있는 것 ${inHead}/3 — 나머지는 body로 스트리밍됨`);\n\nconst text = (p.bodyText ?? '').replace(/\\[https?:\\/\\/[^\\]]+\\]/g, '');   // 이미지 주소 표시는 빼고 잰다\nconst textLen = len(text.replace(/\\s+/g, ''));\nadd('ssr-text', 'GEO', 3, textLen >= 500 ? 'PASS' : textLen >= 200 ? 'WARN' : 'FAIL', `JS 없이 보이는 본문 ${textLen}자(공백 제외)`, textLen);\n\n// Code 노드에서는 URL 을 쓸 수 없어 정규식으로 도메인을 꺼낸다\nconst hostOf = (u) => (String(u ?? '').match(/^(?:https?:)?\\/\\/([^/?#]+)/i) ?? [])[1] ?? '';\nconst host = hostOf(url);\n// '/article/...' 같은 상대 주소는 도메인이 없으니 내부 링크로 본다\nconst external = nonEmpty(p.links).filter((h) => { const hh = hostOf(h); return hh && hh !== host; });\nadd('citations', 'GEO', 1, external.length ? 'PASS' : 'WARN', external.length ? `다른 사이트 링크 ${external.length}개` : '다른 사이트로 가는 링크 없음 — 출처가 약함', external.length);\n\nconst facts = (text.match(/\\d+(?:[.,]\\d+)?/g) ?? []).length;\nadd('concrete-facts', 'GEO', 1, facts >= 3 ? 'PASS' : 'WARN', `숫자·수치 ${facts}개`, facts);\n\n// ---------- 점수: 가중치 × (PASS 1, WARN 0.5, FAIL 0) ----------\nconst score = (cat) => {\n  const cs = checks.filter((c) => c.category === cat);\n  const total = cs.reduce((s, c) => s + c.weight, 0);\n  const got = cs.reduce((s, c) => s + c.weight * (c.result === 'PASS' ? 1 : c.result === 'WARN' ? 0.5 : 0), 0);\n  return Math.round((got / total) * 100);\n};\n\nreturn {\n  json: {\n    url,\n    title,\n    scores: { seo: score('SEO'), aeo: score('AEO'), geo: score('GEO') },\n    issueCount: checks.filter((c) => c.result !== 'PASS').length,\n    checks,\n    content: { title, description: p.description ?? '', headings, firstParagraph: first, text: text.slice(0, 3000) },\n  },\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1520,
+        0
+      ],
+      "id": "4b646790-c367-4e63-8483-7c3339e2b934",
+      "name": "Check Rules"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Fetch Sitemap",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Sitemap": {
+      "main": [
+        [
+          {
+            "node": "Parse Sitemap",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Sitemap": {
+      "main": [
+        [
+          {
+            "node": "Split URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split URLs": {
+      "main": [
+        [
+          {
+            "node": "Only Articles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Only Articles": {
+      "main": [
+        [
+          {
+            "node": "Fetch Article",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Article": {
+      "main": [
+        [
+          {
+            "node": "Extract SEO Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract SEO Fields": {
+      "main": [
+        [
+          {
+            "node": "Check Rules",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  }
+}

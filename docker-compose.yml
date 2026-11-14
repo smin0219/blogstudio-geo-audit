@@ -1,0 +1,14 @@
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:2.47.7   # 버전 고정 — latest 를 쓰면 예고 없이 바뀐다
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5678:5678"               # 이 컴퓨터에서만 접속 — n8n 화면을 외부에 열지 않는다
+    environment:
+      - GENERIC_TIMEZONE=Asia/Seoul         # 스케줄 기준 시간 (없으면 뉴욕 시간)
+      - TZ=Asia/Seoul
+    volumes:
+      - n8n_data:/home/node/.n8n            # 워크플로·자격 증명·암호화 키
+
+volumes:
+  n8n_data:
