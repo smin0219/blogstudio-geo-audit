@@ -1,8 +1,8 @@
 # blogstudio GEO Audit
 
-운영 중인 콘텐츠 플랫폼 [blogstudio.co.kr](https://blogstudio.co.kr)의 글을 자동으로 모아 **SEO·AEO·GEO 규칙으로 점검하고, LLM(Claude)이 고칠 방법을 제안하는 n8n 워크플로**입니다.
-점수는 규칙(코드)이 매기고, Claude는 실패·경고 항목의 개선안만 씁니다. Claude의 응답은 코드로 다시 검증하고, 문제가 있으면 사람이 보도록 표시합니다.
-결과를 메일로 보고하는 단계를 이어서 만들고 있습니다.
+운영 중인 개인 프로젝트 [blogstudio.co.kr](https://blogstudio.co.kr)에 LLM을 적용해 본 PoC입니다.
+글을 자동으로 모아 **SEO·AEO·GEO 규칙으로 점검하고, LLM(Claude)이 고칠 방법을 제안하고, 결과를 HTML 메일로 보고하는 n8n 워크플로**입니다.
+점수는 규칙(코드)이 매기고, Claude는 실패·경고 항목의 개선안만 씁니다. Claude의 응답은 코드로 다시 검증하고, 문제가 있으면 메일에서 "검토 필요"로 표시합니다.
 
 검색이 AI 답변으로 옮겨 가면서 "검색 결과에 잘 나오는가(SEO)"만이 아니라 "질문에 대한 답으로 뽑히는가(AEO)", "생성형 AI가 읽고 인용하기 좋은가(GEO)"까지 봐야 합니다.
 이 프로젝트는 그 점검을 사람이 매번 하지 않도록 반복 가능한 자동화로 만든 것입니다.
@@ -17,7 +17,7 @@
 | 판정 | 규칙 14개로 판정하고 SEO·AEO·GEO 점수 계산 | 완료 |
 | 개선안 | Claude Sonnet 5.5가 실패·경고 항목의 개선안 작성 (JSON 스키마 구조화 출력) | 완료 |
 | 검증 | 정상 종료·JSON·글자 수·원문에 없는 숫자 검사, 비용 계산 | 완료 |
-| 보고 | HTML 메일 리포트 | 진행 중 |
+| 보고 | 글 전체를 HTML 메일 한 통으로 보고 (Gmail SMTP) | 완료 |
 
 ## 구조
 
@@ -30,11 +30,11 @@ Manual Trigger (Schedule Trigger로 바꿀 예정)
  → Fetch Article         글 HTML 받기 (User-Agent: blogstudio-geo-audit-bot, 1초 간격)
  → Extract SEO Fields    HTML에서 점검할 값 추출
  → Check Rules           규칙 판정 + 점수 (JavaScript)
- → Limit                 Claude에 보낼 글 수 제한 (테스트용, 기본 2개)
  → Build Claude Request  실패·경고 항목과 글 내용으로 요청 만들기
  → Claude                Messages API 호출 (1초 간격, 실패하면 한 번 더 시도)
  → Validate              응답 검증 + 비용 계산
- → 메일 리포트            (진행 중)
+ → Build Report          글 전체를 HTML 보고서 한 통으로 묶기
+ → Send Report           메일 발송
 ```
 
 ## 점검 규칙
@@ -82,6 +82,11 @@ Manual Trigger (Schedule Trigger로 바꿀 예정)
   - 메타 설명·첫 문단 제안에 Claude가 본 원문에 없는 숫자가 있는지
 - **글 하나가 실패해도 전체는 계속**: Claude 노드는 실패하면 5초 뒤 한 번 더 시도합니다. 그래도 실패하면 오류를 다음 노드로 넘기고(On Error: Continue), Validate가 그 글을 "검토 필요"로 표시합니다.
 
+### 보고
+- **사람이 먼저 볼 것부터**: 검토가 필요한 글을 맨 위에 두고, 나머지는 점수가 낮은 글부터 보여 줍니다.
+- **LLM이 쓴 글도 이스케이프**: 개선안과 글 제목을 HTML에 넣기 전에 이스케이프해, 메일에 코드가 섞여 들어가지 않게 합니다.
+- **비용도 함께 보고**: 실행마다 Claude 비용을 메일 상단에 표시합니다.
+
 ### 운영
 - **n8n 운영**: 버전을 고정(2.47.7)하고 `127.0.0.1`에만 열어 둡니다. 2026년에 n8n의 치명적 취약점이 여러 번 공개됐기 때문입니다.
 - **비밀값은 n8n 자격 증명에만**: API 키와 메일 계정은 n8n Credentials에 저장하므로 워크플로 JSON과 이 저장소에는 들어가지 않습니다.
@@ -114,7 +119,17 @@ Googlebot은 JS를 실행하므로 문제가 없지만, GPTBot·ClaudeBot·Perpl
 
 결과 한 건의 전체 모양은 [examples/sample-audit-result.json](examples/sample-audit-result.json)에 있습니다.
 
-## Claude 개선안 예시와 비용 (2026-11-14, 글 2개)
+## Claude 개선안과 비용 (2026-11-14, 글 17개 전체 실행)
+
+| 항목 | 값 |
+|---|---|
+| 실행 시간 | 46초 (사이트맵 수집부터 메일 발송까지) |
+| 토큰 | 입력 62,822 · 출력 23,672 |
+| Claude 비용 | $0.36 (글당 $0.015~0.026) |
+| 검토 필요 | 1개 |
+
+검토 필요로 걸린 1개는 스포츠 글입니다. Claude가 메타 설명 제안에 "5가지 흐름으로 정리했다"라고 썼지만 원문에는 그런 숫자가 없어서, Validate가 "원문에 없는 숫자: 5"로 표시했습니다.
+같은 글의 첫 문단 제안에서는 Claude가 "700조원" 수치에 대해 스스로 "출처 추가 필요"라고 적었습니다.
 
 이유식 글(첫 문단 34자, 출처 링크 없음)에 대한 개선안 일부입니다.
 
@@ -126,15 +141,6 @@ Googlebot은 JS를 실행하므로 문제가 없지만, GPTBot·ClaudeBot·Perpl
 
 전체 응답은 [examples/sample-claude-suggestion.json](examples/sample-claude-suggestion.json)에 있습니다.
 
-실측 비용 (Sonnet 5.5, 100만 토큰당 입력 $2·출력 $10):
-
-| 글 | 입력 토큰 | 출력 토큰 | 비용 |
-|---|---|---|---|
-| 이유식 | 3,408 | 1,402 | $0.021 |
-| 0~2세 육아 | 3,695 | 1,520 | $0.023 |
-
-글 하나에 약 2센트이므로, 글 17개를 모두 보내도 약 $0.37입니다.
-
 ## 실행 방법
 
 ```bash
@@ -143,13 +149,22 @@ docker compose up -d
 
 1. http://localhost:5678 에 접속해 계정을 만듭니다.
 2. Workflows → Import from File로 `workflows/blogstudio-geo-audit.json`을 불러옵니다.
-3. Anthropic API 키를 등록합니다. Credentials → Create credential → Header Auth를 고르고, Name은 `x-api-key`, Value는 API 키로 저장합니다. 그다음 Claude 노드에서 이 자격 증명을 선택합니다.
-4. Execute workflow를 누릅니다. 규칙 점검은 모든 글에 하고, Claude에는 Limit 노드가 정한 2개만 보냅니다. 전체를 보내려면 Limit 노드를 지웁니다.
+3. 자격 증명 두 개를 만들어 각 노드에서 선택합니다.
+
+   | 노드 | 자격 증명 | 값 |
+   |---|---|---|
+   | Claude | Header Auth | Name `x-api-key`, Value는 Anthropic API 키 |
+   | Send Report | SMTP | Host `smtp.gmail.com`, Port `465`, SSL/TLS 켜기, User는 Gmail 주소, Password는 Gmail 앱 비밀번호 |
+
+4. Send Report 노드의 From·To를 본인 메일 주소로 바꿉니다.
+5. Execute workflow를 누릅니다. 글 17개 기준 1분 안팎이 걸리고, Claude 비용은 약 $0.36입니다.
 
 ## 한계
 
 - 질문형 판정과 숫자 세기는 정규식이라 대략적입니다.
 - 숫자 검사는 그 숫자가 원문에 있는지만 봅니다. 단위나 문맥이 맞는지는 보지 않습니다.
 - 개선안의 질은 사람이 읽고 판단합니다. 개선안 품질을 자동으로 평가하는 장치(eval)는 아직 없습니다.
+- 실행할 때마다 모든 글을 다시 점검합니다. 바뀐 글만 골라 점검하는 처리 기록은 아직 없습니다.
+- 메일은 Gmail SMTP(앱 비밀번호)로 보냅니다. 운영 환경에서는 SES 같은 발송 서비스로 바꿀 계획입니다.
 - 규칙이 n8n Code 노드 안에 있어 단위 테스트가 어렵습니다. 규칙이 늘어나면 테스트할 수 있는 별도 서비스(Spring Boot)로 분리할 계획입니다.
 - 대상 사이트는 blogstudio.co.kr 하나입니다.
