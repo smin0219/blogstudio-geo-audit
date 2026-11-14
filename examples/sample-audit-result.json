@@ -1,0 +1,145 @@
+{
+  "url": "https://blogstudio.co.kr/article/e4988095-b91a-4206-8b8a-588f12b3190f",
+  "title": "아기 이유식, 언제부터 시작해야 할까? 초보 부모가 알아야 할 이유식 기본",
+  "scores": {
+    "seo": 100,
+    "aeo": 75,
+    "geo": 79
+  },
+  "issueCount": 3,
+  "checks": [
+    {
+      "id": "status",
+      "category": "SEO",
+      "weight": 3,
+      "result": "PASS",
+      "message": "HTTP 200",
+      "value": 200
+    },
+    {
+      "id": "indexable",
+      "category": "SEO",
+      "weight": 3,
+      "result": "PASS",
+      "message": "색인 허용",
+      "value": "index, follow"
+    },
+    {
+      "id": "title",
+      "category": "SEO",
+      "weight": 1,
+      "result": "PASS",
+      "message": "제목 41자 (권장 10~60자)",
+      "value": "아기 이유식, 언제부터 시작해야 할까? 초보 부모가 알아야 할 이유식 기본"
+    },
+    {
+      "id": "description",
+      "category": "SEO",
+      "weight": 2,
+      "result": "PASS",
+      "message": "메타 설명 159자 (권장 50~160자)",
+      "value": null
+    },
+    {
+      "id": "canonical",
+      "category": "SEO",
+      "weight": 2,
+      "result": "PASS",
+      "message": "자기 주소를 가리킴",
+      "value": "https://blogstudio.co.kr/article/e4988095-b91a-4206-8b8a-588f12b3190f"
+    },
+    {
+      "id": "h1",
+      "category": "SEO",
+      "weight": 1,
+      "result": "PASS",
+      "message": "h1 1개",
+      "value": 1
+    },
+    {
+      "id": "open-graph",
+      "category": "SEO",
+      "weight": 1,
+      "result": "PASS",
+      "message": "og 태그 모두 있음",
+      "value": null
+    },
+    {
+      "id": "json-ld",
+      "category": "SEO",
+      "weight": 2,
+      "result": "PASS",
+      "message": "필수 필드 있음",
+      "value": null
+    },
+    {
+      "id": "question-heading",
+      "category": "AEO",
+      "weight": 1,
+      "result": "PASS",
+      "message": "질문형 제목·소제목 3개",
+      "value": "아기 이유식, 언제부터 시작해야 할까? 초보 부모가 알아야 할 이유식 기본"
+    },
+    {
+      "id": "answer-first",
+      "category": "AEO",
+      "weight": 2,
+      "result": "WARN",
+      "message": "첫 문단 34자 (권장 40~300자)",
+      "value": "아기가 생후 몇 개월이 되면 부모에게 새로운 고민이 생깁니다."
+    },
+    {
+      "id": "paragraph-structure",
+      "category": "AEO",
+      "weight": 1,
+      "result": "PASS",
+      "message": "소제목 5개, 가장 긴 문단 99자",
+      "value": null
+    },
+    {
+      "id": "metadata-in-head",
+      "category": "GEO",
+      "weight": 2,
+      "result": "WARN",
+      "message": "head 안에 있는 것 0/3 — 나머지는 body로 스트리밍됨",
+      "value": null
+    },
+    {
+      "id": "ssr-text",
+      "category": "GEO",
+      "weight": 3,
+      "result": "PASS",
+      "message": "JS 없이 보이는 본문 1411자(공백 제외)",
+      "value": 1411
+    },
+    {
+      "id": "citations",
+      "category": "GEO",
+      "weight": 1,
+      "result": "WARN",
+      "message": "다른 사이트로 가는 링크 없음 — 출처가 약함",
+      "value": 0
+    },
+    {
+      "id": "concrete-facts",
+      "category": "GEO",
+      "weight": 1,
+      "result": "PASS",
+      "message": "숫자·수치 20개",
+      "value": 20
+    }
+  ],
+  "content": {
+    "title": "아기 이유식, 언제부터 시작해야 할까? 초보 부모가 알아야 할 이유식 기본",
+    "description": "아기가 생후 몇 개월이 되면 부모에게 새로운 고민이 생깁니다. \"이제 이유식을 시작해야 할까?\" 처음 아이를 키우는 부모라면 이유식을 언제 시작해야 하는지, 어떤 음식을 먼저 먹여야 하는지, 하루에 얼마나 먹여야 하는지 하나하나가 어렵게 느껴집니다. 인터넷을 검색하면 사람마다 조금씩…",
+    "headings": [
+      "이유식은 언제 시작할까?",
+      "처음에는 어떤 음식을 먹일까?",
+      "새로운 음식은 하나씩",
+      "이유식에서 가장 중요한 것은 '양'이 아니다",
+      "부모가 기억하면 좋은 이유식 원칙"
+    ],
+    "firstParagraph": "아기가 생후 몇 개월이 되면 부모에게 새로운 고민이 생깁니다.",
+    "text": "아기 이유식, 언제부터 시작해야 할까? 초보 부모가 알아야 할 이유식 기본\n\n민군\n\n아기가 생후 몇 개월이 되면 부모에게 새로운 고민이 생깁니다.\n\n\"이제 이유식을 시작해야 할까?\"\n\n처음 아이를 키우는 부모라면 이유식을 언제 시작해야 하는지, 어떤 음식을 먼저 먹여야 하는지, 하루에 얼마나 먹여야 하는지 하나하나가 어렵게\n느껴집니다.\n\n인터넷을 검색하면 사람마다 조금씩 다른 이야기를 하기 때문에 더욱 혼란스러울 수 있습니다.\n\n\n\n스크린샷 2026-08-20 오전 11.05.03\n\n\n\n이유식은 언제 시작할까?\n\n\n…"
+  }
+}
